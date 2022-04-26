@@ -43,6 +43,7 @@ public:
 	ofMesh mesh;
 	TreeNode root;
 	bool bUseFaces = false;
+	ofColor colors[10] = { ofColor::white, ofColor::red, ofColor::chocolate, ofColor::orange, ofColor::purple, ofColor::green, ofColor::blue, ofColor::deepPink, ofColor::lightCyan, ofColor::lemonChiffon };
 
 	// debug;
 	//

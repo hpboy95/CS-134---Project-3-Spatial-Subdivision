@@ -348,7 +348,12 @@ bool ofApp::raySelectWithOctree(ofVec3f &pointRet) {
 
 	if (pointSelected) {
 		pointRet = octree.mesh.getVertex(selectedNode.points[0]);
+		cout << "Point Selected:" << endl;
+		cout << "X: " << mars.getMesh(0).getVertex(selectedNode.points[0]).x << endl;
+		cout << "Y: " << mars.getMesh(0).getVertex(selectedNode.points[0]).y << endl;
+		cout << "Z: " << mars.getMesh(0).getVertex(selectedNode.points[0]).z << endl;
 	}
+	cout << pointSelected << endl;
 	return pointSelected;
 }
 

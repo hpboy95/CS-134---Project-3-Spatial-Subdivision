@@ -194,22 +194,25 @@ void Octree::subdivide(const ofMesh & mesh, TreeNode & node, int numLevels, int 
 */
 bool Octree::intersect(const Ray &ray, const TreeNode & node, TreeNode & nodeRtn) {
 	bool intersects = false;
-	//if (node.children.size() > 0) { //If there are children
-	//	int i = 0;
-	//	while (i < node.children.size()) {
-	//		intersects = node.children[i].box.intersect(ray, 0, 100000);
-	//		if (intersects) {
-	//			break; //You have found an intersection in the children. Just get the first instance of this
-	//		}
-	//		i++;
-	//	}
-	//	if (intersects) { //You have the intersected box. Check the contents of it
-	//		intersects = intersect(ray, node.children[i], nodeRtn);
-	//	}
-	//}
-	//else { //There are no Children. Just check for intersection
-	//	intersects = node.box.intersect(ray, 0, 100000);
-	//}
+	if (node.children.size() > 0) { //If there are children
+		int i = 0;
+		while (i < node.children.size()) {
+			intersects = node.children[i].box.intersect(ray, 0, 100000);
+			if (intersects) {
+				break; //You have found an intersection in the children. Just get the first instance of this
+			}
+			i++;
+		}
+		if (intersects) { //You have the intersected box. Check the contents of it
+			intersects = intersect(ray, node.children[i], nodeRtn);
+		}
+	}
+	else { //There are no Children. Just check for intersection
+		intersects = node.box.intersect(ray, 0, 100000);
+		if (intersects) {
+			nodeRtn = node;
+		}
+	}
 	return intersects;
 }
 
@@ -222,6 +225,7 @@ void Octree::draw(TreeNode & node, int numLevels, int level) {
 	if (level >= numLevels) return;
 	//cout << "level: " << level << endl;
 	//cout << "number of points " << node.points.size() << endl;
+	ofSetColor(colors[level]);
 	drawBox(node.box);
 	level++;
 	for (int i = 0; i < node.children.size(); i++) {

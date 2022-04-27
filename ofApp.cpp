@@ -134,7 +134,7 @@ void ofApp::draw() {
 	//
 	if (bPointSelected) {
 		ofSetColor(ofColor::blue);
-		ofDrawSphere(selectedPoint, .1);
+		ofDrawSphere(selectedPoint, 1);
 	}
 
 

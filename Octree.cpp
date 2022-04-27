@@ -17,6 +17,7 @@
 //draw a box from a "Box" class  
 //
 void Octree::drawBox(const Box &box) {
+	ofNoFill();
 	Vector3 min = box.parameters[0];
 	Vector3 max = box.parameters[1];
 	Vector3 size = max - min;
@@ -127,6 +128,8 @@ void Octree::subDivideBox8(const Box &box, vector<Box> & boxList) {
 }
 
 void Octree::create(const ofMesh & geo, int numLevels) {
+	cout << "Creating Octree" << endl;
+	float startTime = ofGetElapsedTimeMillis();
 	// initialize octree structure
 	//
 	mesh = geo;
@@ -146,6 +149,9 @@ void Octree::create(const ofMesh & geo, int numLevels) {
 	//
 	level++;
     subdivide(mesh, root, numLevels, level);
+	float finishTime = (ofGetElapsedTimeMillis() - startTime) / 1000;
+	cout << "Finished Octree" << endl;
+	cout << "Octree took " << finishTime << " seconds to complete" << endl;
 }
 
 
@@ -194,31 +200,76 @@ void Octree::subdivide(const ofMesh & mesh, TreeNode & node, int numLevels, int 
 */
 bool Octree::intersect(const Ray &ray, const TreeNode & node, TreeNode & nodeRtn) {
 	bool intersects = false;
-	if (node.children.size() > 0) { //If there are children
-		int i = 0;
-		while (i < node.children.size()) {
-			intersects = node.children[i].box.intersect(ray, 0, 100000);
+	//Go through all the children and get the closest intersecting one
+	if (node.children.size() > 0) {
+		int closest = -1;
+		float closestDistance = FLT_MAX;
+		for (int i = 0; i < node.children.size(); i++) { //go though all the children
+			bool intersects = node.children[i].box.intersect(ray, 0, 10000);
 			if (intersects) {
-				break; //You have found an intersection in the children. Just get the first instance of this
+				//It intersects check if it is closer than previous and set it if it is
+				glm::vec3 rayOrigin = glm::vec3(ray.origin.x(), ray.origin.y(), ray.origin.z());
+				Vector3 precenter = (node.children[i].box.parameters[1] - node.children[i].box.parameters[0]) / 2 + node.children[i].box.parameters[0]; //Center function
+				glm::vec3 center = glm::vec3(precenter.x(), precenter.y(), precenter.z());
+				float distance = sqrt(pow(max(rayOrigin.x - center.x, 0.0f), 2) //SDF Formula
+					+ pow(max(rayOrigin.y - center.y, 0.0f), 2)
+					+ pow(max(rayOrigin.z - center.z, 0.0f), 2));
+				if (distance < closestDistance) { //Always choose only the closest one
+					closestDistance = distance;
+					closest = i;
+				}
 			}
-			i++;
 		}
-		if (intersects) { //You have the intersected box. Check the contents of it
-			intersects = intersect(ray, node.children[i], nodeRtn);
+		if (closest < 0) {
+			//Worst Case no intersections found inside
+			return false;
 		}
+		intersects = intersect(ray, node.children[closest], nodeRtn);
 	}
-	else { //There are no Children. Just check for intersection
-		intersects = node.box.intersect(ray, 0, 100000);
-		if (intersects) {
-			nodeRtn = node;
-		}
+	else {
+		nodeRtn = node; //There are no children This one has to be it
+		intersects = true;
 	}
 	return intersects;
 }
 
+//bool Octree::intersect(const Ray & ray, const TreeNode & node, TreeNode & nodeRtn) {
+//	bool intersects = false;
+//	if (node.children.size() > 0) { //If there are children
+//		int i = 0;
+//		while (i < node.children.size()) {
+//			intersects = node.children[i].box.intersect(ray, 0, 100000);
+//			if (intersects) {
+//				break; //You have found an intersection in the children. Just get the first instance of this
+//			}
+//			i++;
+//		}
+//		if (intersects) { //You have the intersected box. Check the contents of it
+//			intersects = intersect(ray, node.children[i], nodeRtn);
+//		}
+//	}
+//	else { //There are no Children. Just check for intersection
+//		intersects = node.box.intersect(ray, 0, 100000);
+//		if (intersects) {
+//			nodeRtn = node;
+//		}
+//	}
+//	return intersects;
+//}
+
 bool Octree::intersect(const Box &box, TreeNode & node, vector<Box> & boxListRtn) {
-	bool intersects = false;
-	return intersects;
+	bool overlap = false;
+	for (int i = 0; i < node.children.size(); i++) { //go though all the children
+		bool overlap = node.children[i].box.overlap(box); //This will set all the points in the box in the node
+		if (overlap) { //Child overlaps
+			boxListRtn.push_back(node.children[i].box);
+			intersect(box, node.children[i], boxListRtn);
+		}
+	}
+	if (boxListRtn.size() > 1) {
+		return true;
+	}
+	return false;
 }
 
 void Octree::draw(TreeNode & node, int numLevels, int level) {
@@ -236,8 +287,15 @@ void Octree::draw(TreeNode & node, int numLevels, int level) {
 // Optional
 //
 void Octree::drawLeafNodes(TreeNode & node) {
-
-
+	if (node.children.size() > 0) {
+		for (int i = 0; i < node.children.size(); i++) {
+			drawLeafNodes(node.children[i]);
+		}
+	}
+	else {
+		ofSetColor(ofColor::white);
+		drawBox(node.box);
+	}
 }
 
 

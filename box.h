@@ -48,7 +48,10 @@ class Box {
 	// implement for Homework Project
 	//
 	 bool overlap(const Box &box) {
-		 return false;
+		 bool xCheck = max().x() >= box.parameters[0].x() && box.parameters[1].x() >= min().x();
+		 bool yCheck = max().y() >= box.parameters[0].y() && box.parameters[1].y() >= min().y();
+		 bool zCheck = max().z() >= box.parameters[0].z() && box.parameters[1].z() >= min().z();
+		 return xCheck && yCheck && zCheck;
 	}
 
 	Vector3 center() {

@@ -184,7 +184,10 @@ void Octree::subdivide(const ofMesh & mesh, TreeNode & node, int numLevels, int 
 			t.points = pointsReturn;
 			node.children.push_back(t); //Add to current node's children
 			if (pointsReturn.size() > 1) { //Child is not leaf
-				subdivide(mesh, node.children[node.children.size() - 1], numLevels, level + 1); //recursively subdivide
+				subdivide(mesh, node.children.back(), numLevels, level + 1); //recursively subdivide
+			}
+			else {
+				numLeaf++;
 			}
 		}
 	}
@@ -198,64 +201,60 @@ void Octree::subdivide(const ofMesh & mesh, TreeNode & node, int numLevels, int 
 * Node: The current tree node
 * nodeRtn: The intersected tree node
 */
-bool Octree::intersect(const Ray &ray, const TreeNode & node, TreeNode & nodeRtn) {
-	bool intersects = false;
-	//Go through all the children and get the closest intersecting one
-	if (node.children.size() > 0) {
-		int closest = -1;
-		float closestDistance = FLT_MAX;
-		for (int i = 0; i < node.children.size(); i++) { //go though all the children
-			bool intersects = node.children[i].box.intersect(ray, 0, 10000);
-			if (intersects) {
-				//It intersects check if it is closer than previous and set it if it is
-				glm::vec3 rayOrigin = glm::vec3(ray.origin.x(), ray.origin.y(), ray.origin.z());
-				Vector3 precenter = (node.children[i].box.parameters[1] - node.children[i].box.parameters[0]) / 2 + node.children[i].box.parameters[0]; //Center function
-				glm::vec3 center = glm::vec3(precenter.x(), precenter.y(), precenter.z());
-				float distance = sqrt(pow(max(rayOrigin.x - center.x, 0.0f), 2) //SDF Formula
-					+ pow(max(rayOrigin.y - center.y, 0.0f), 2)
-					+ pow(max(rayOrigin.z - center.z, 0.0f), 2));
-				if (distance < closestDistance) { //Always choose only the closest one
-					closestDistance = distance;
-					closest = i;
-				}
-			}
-		}
-		if (closest < 0) {
-			//Worst Case no intersections found inside
-			return false;
-		}
-		intersects = intersect(ray, node.children[closest], nodeRtn);
-	}
-	else {
-		nodeRtn = node; //There are no children This one has to be it
-		intersects = true;
-	}
-	return intersects;
-}
-
-//bool Octree::intersect(const Ray & ray, const TreeNode & node, TreeNode & nodeRtn) {
+//bool Octree::intersect(const Ray &ray, const TreeNode & node, TreeNode & nodeRtn) {
 //	bool intersects = false;
-//	if (node.children.size() > 0) { //If there are children
-//		int i = 0;
-//		while (i < node.children.size()) {
-//			intersects = node.children[i].box.intersect(ray, 0, 100000);
+//	//Go through all the children and get the closest intersecting one
+//	if (node.children.size() > 0) {
+//		int closest = -1;
+//		float closestDistance = FLT_MAX;
+//		for (int i = 0; i < node.children.size(); i++) { //go though all the children
+//			bool intersects = node.children[i].box.intersect(ray, -10000, 10000);
 //			if (intersects) {
-//				break; //You have found an intersection in the children. Just get the first instance of this
+//				//It intersects check if it is closer than previous and set it if it is
+//				glm::vec3 rayOrigin = glm::vec3(ray.origin.x(), ray.origin.y(), ray.origin.z());
+//				Vector3 precenter = (node.children[i].box.parameters[1] - node.children[i].box.parameters[0]) / 2 + node.children[i].box.parameters[0]; //Center function
+//				glm::vec3 center = glm::vec3(precenter.x(), precenter.y(), precenter.z());
+//				glm::max(glm::vec3(glm::abs(rayOrigin) - center), glm::vec3(0));
+//				glm::vec3 q = glm::vec3(glm::abs(rayOrigin) - center);
+//				float distance = glm::max(q, glm::vec3(0)).length() + glm::min(0.0f, glm::max(q.x, max(q.y, q.z))); //Box SDF
+//				if (distance < closestDistance) { //Always choose only the closest one
+//					closestDistance = distance;
+//					closest = i;
+//				}
 //			}
-//			i++;
 //		}
-//		if (intersects) { //You have the intersected box. Check the contents of it
-//			intersects = intersect(ray, node.children[i], nodeRtn);
+//		if (closest < 0) {
+//			//Worst Case no intersections found inside
+//			return false;
 //		}
+//		intersects = intersect(ray, node.children[closest], nodeRtn);
 //	}
-//	else { //There are no Children. Just check for intersection
-//		intersects = node.box.intersect(ray, 0, 100000);
-//		if (intersects) {
-//			nodeRtn = node;
-//		}
+//	else {
+//		nodeRtn = node; //There are no children This one has to be it
+//		intersects = true;
 //	}
 //	return intersects;
 //}
+
+bool Octree::intersect(const Ray & ray, const TreeNode & node, TreeNode & nodeRtn) {
+	bool inter = false;
+	if (node.points.size() == 1) {
+		inter = node.box.intersect(ray, -10000, 10000);
+		if (inter)
+		{
+			nodeRtn = node;
+		}
+	}
+	else {
+		for (int i = 0; i < node.children.size(); i++) { //go though all the children
+			if (node.children[i].box.intersect(ray, -10000, 10000) && intersect(ray, node.children[i], nodeRtn)) { //Child overlaps
+				inter = true;
+				break;
+			}
+		}
+	}	
+	return inter;
+}
 
 bool Octree::intersect(const Box &box, TreeNode & node, vector<Box> & boxListRtn) {
 	bool overlap = false;

@@ -343,9 +343,12 @@ bool ofApp::raySelectWithOctree(ofVec3f &pointRet) {
 	rayDir.normalize();
 	Ray ray = Ray(Vector3(rayPoint.x, rayPoint.y, rayPoint.z),
 		Vector3(rayDir.x, rayDir.y, rayDir.z));
-
+	cout << "Starting Octree Intersection" << endl;
+	float start = ofGetElapsedTimeMicros();
 	pointSelected = octree.intersect(ray, octree.root, selectedNode);
-
+	float finished = (ofGetElapsedTimeMicros() - start);
+	cout << "Finished Intersection" << endl;
+	cout << "Intersection took " << finished << " microseconds to complete" << endl;
 	if (pointSelected) {
 		pointRet = octree.mesh.getVertex(selectedNode.points[0]);
 		cout << "Point Selected:" << endl;
@@ -353,7 +356,7 @@ bool ofApp::raySelectWithOctree(ofVec3f &pointRet) {
 		cout << "Y: " << mars.getMesh(0).getVertex(selectedNode.points[0]).y << endl;
 		cout << "Z: " << mars.getMesh(0).getVertex(selectedNode.points[0]).z << endl;
 	}
-	cout << pointSelected << endl;
+
 	return pointSelected;
 }
 

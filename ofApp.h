@@ -7,7 +7,6 @@
 #include <glm/gtx/intersect.hpp>
 
 
-
 class ofApp : public ofBaseApp{
 
 	public:
